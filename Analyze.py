@@ -12,7 +12,33 @@ import _thread as thread
 import sys
 import threading
 ThreadIsEnd=True
-
+class loginUser:
+	def __init__(self,PassWord=None,IP=None,Port=None,SID=None,Remember=False):
+		self.PassWord=PassWord
+		self.IP=IP
+		self.Port=Port
+		self.SID=SID
+		self.Remember=Remember
+	def getPassWord(self):
+		return self.PassWord
+	def setPassWord(self,PassWord):
+		self.PassWord=PassWord
+	def getIP(self):
+		return self.IP
+	def setIP(self,IP):
+		self.IP=IP
+	def getPort(self):
+		return self.Port
+	def setPort(self,Port):
+		self.Port=Port
+	def getSID(self):
+		return self.SID
+	def setSID(self,SID):
+		self.SID=SID
+	def getRemember(self):
+		return self.Remember
+	def setRemember(self,Remember):
+		self.Remember=Remember
 class GradientFrame(tkinter.Canvas):
     '''A gradient frame which uses a canvas to draw the background'''
     def __init__(self, parent,colorBegin,colorEnd, borderwidth=1, relief="sunken",*pargs,**kargs):
@@ -51,11 +77,14 @@ class OracleAnalyze:
 
     def __init__(self):
         self.LoginStatus=False
-        self.history={'PassWord':None,'IP':None,'Port':None,'SID':None,'Remember':False}
+        #self.history={'PassWord':None,'IP':None,'Port':None,'SID':None,'Remember':False}
+        self.loginU=loginUser()
         self.window = tkinter.Tk()
         self.window.title('Oracle Analyze')
         scnWidth,scnHeight = self.window.maxsize()
         self.window.resizable(0, 0)
+        self.proportionX=1200/scnWidth
+        self.proportionY=741/scnHeight
         tmpcnf = '%dx%d+%d+%d'%(1200, 741, (scnWidth-1200)/2, (scnHeight-741)/2)
         self.window.geometry(tmpcnf)
         self.window.iconbitmap('./bitmaps/OracleAnalyze.ico')
@@ -135,11 +164,15 @@ class OracleAnalyze:
     	  self.History = tkinter.Checkbutton(RememberButton,variable=self.Remember, onvalue = True,offvalue = False,command=self.RememberInfo)
     	  self.History.place(x=-7,y=-7)
     	  RememberButton.place(x = 50+xrevise, y = yrevise+145)
-    	  self.Logins = tkinter.Button(self.LoginContent, text = 'Login', width = 10, command = self.ButtonLoginEvent)
-    	  self.Logins.place(x = 40+xrevise, y = yrevise+170)
+    	  sty=tkinter.ttk.Style()
+    	  #sty.configure('TButton',background='#FFFFFF')
+    	  #sty.configure('TButton',foreground='#99CCFF')
+    	  #sty.map("TButton",foreground=[('pressed', '#99CCFF'), ('active', 'blue')],background=[('pressed', '!disabled', 'black'), ('active', 'white')])
+    	  self.Logins = tkinter.ttk.Button(self.LoginContent, text = 'Login', width = 10,style='TButton', command = self.ButtonLoginEvent)
+    	  self.Logins.place(x = 50+xrevise, y = yrevise+170)
     	  if os.path.exists('remember.info'):
     	  	self.RememberFile=open('remember.info','rb')
-    	  	self.history=pickle.load(self.RememberFile)
+    	  	self.loginU=pickle.load(self.RememberFile)
     	  	self.RememberFile.close()
     	  self.SetInforVar()
     def ButtonLogoutEvent(self):
@@ -155,37 +188,44 @@ class OracleAnalyze:
     	  	self.ButtonLogoutEvent()
     	  	#tkinter.messagebox.showinfo("Login failed:",self.IPStr.get()+':'+self.PortStr.get()+'/'+self.SIDStr.get()+' sys as sysdba already logged in')
     	  self.LoginStatus=self.LoginDatabase('SYS',self.PassWordStr.get(),self.IPStr.get(),self.PortStr.get(),self.SIDStr.get())
-    	  if self.LoginStatus:	
+    	  if self.LoginStatus:
+    	  	self.RememberInfo()	
     	  	self.setFrameContent()
     	  	self.LoginContent.place_forget()
+    	  	welcome=tkFont.Font(root=self.window,family='Liberation Serif', size=60 )
+    	  	self.Content.create_text(600,300,text="WELCOME",font=welcome)
     	  	self.Content.place(x=0,y=0)
     	  	self.window.title('Oracle Analyze                    '+self.IPStr.get()+':'+self.PortStr.get()+'/'+self.SIDStr.get()+' sys as sysdba login')
     def RememberInfo(self):
     	  if self.Remember.get():
-    	  	self.history['PassWord'] = self.PassWordStr.get()
-    	  	self.history['IP']       = self.IPStr.get()
-    	  	self.history['Port']     = self.PortStr.get()
-    	  	self.history['SID']      = self.SIDStr.get()
-    	  	self.history['Remember'] = True
+    	  	self.loginU.setPassWord(self.PassWordStr.get())
+    	  	self.loginU.setIP(self.IPStr.get())
+    	  	self.loginU.setPort(self.PortStr.get())
+    	  	self.loginU.setSID(self.SIDStr.get())
+    	  	self.loginU.setRemember( True)
     	  	self.RememberFile=open('remember.info','wb')
-    	  	pickle.dump(self.history,self.RememberFile)
+    	  	pickle.dump(self.loginU,self.RememberFile)
     	  	self.RememberFile.close()
     	  else:
-    	  	self.history={'PassWord':None,'IP':None,'Port':None,'SID':None,'Remember':False}
+    	  	self.loginU.setPassWord(None)
+    	  	self.loginU.setIP(None)
+    	  	self.loginU.setPort(None)
+    	  	self.loginU.setSID(None)
+    	  	self.loginU.setRemember(False)
     	  	self.RememberFile=open('remember.info','wb')
-    	  	pickle.dump(self.history,self.RememberFile)
+    	  	pickle.dump(self.loginU,self.RememberFile)
     	  	self.RememberFile.close()
     def SetInforVar(self):
-    	  if self.history['PassWord']:
-    	  	self.PassWordStr.set(self.history['PassWord'])
-    	  if self.history['IP']:
-    	  	self.IPStr.set(self.history['IP'])
-    	  if self.history['Port']:
-    	  	self.PortStr.set(self.history['Port'])
-    	  if self.history['SID']:
-    	  	self.SIDStr.set(self.history['SID'])
-    	  if self.history['Remember']:
-    	  	self.History.select()  
+    	  	if self.loginU.getPassWord():
+    	  		self.PassWordStr.set(self.loginU.getPassWord())
+    	  	if self.loginU.getIP():
+    	  		self.IPStr.set(self.loginU.getIP())
+    	  	if self.loginU.getPort():
+    	  		self.PortStr.set(self.loginU.getPort())
+    	  	if self.loginU.getSID():
+    	  		self.SIDStr.set(self.loginU.getSID())
+    	  	if self.loginU.getRemember():
+    	  		self.History.select()
     def LoginDatabase(self,UserName,PassWord,IP,Port,SID):
     	  try:
     	  	if UserName=='' or UserName is None:
@@ -242,8 +282,8 @@ class OracleAnalyze:
     	  self.ButtonFrame.create_text(buttonx,buttony+30,text="PassWord:")
     	  self.SqlPlanPassword = tkinter.Entry(self.ButtonFrame,width = 30,bd=3,textvariable=self.SqlPlanPassWordStr,show='*')
     	  self.SqlPlanPassword.place(x = buttonx+40, y = buttony+15)  
-    	  self.ViewSqlPlan = tkinter.Button(self.ButtonFrame, text = 'View SqlPlan', width = 10,command=self.ButtonViewSqlPlanEvent)
-    	  self.ViewSqlPlan.place(x=buttonx,y=buttony+60)
+    	  self.ViewSqlPlan = tkinter.ttk.Button(self.ButtonFrame, text = 'View SqlPlan', width = 12,command=self.ButtonViewSqlPlanEvent)
+    	  self.ViewSqlPlan.place(x=buttonx+50,y=buttony+60)
     	  
     	  self.ButtonFrame.place(x=500,y=0)
     	  self.SqlFrame.place(x=0,y=0)
@@ -389,10 +429,10 @@ class OracleAnalyze:
     	  		  self.AWRBeginTimeStr["values"]=self.GetAWRSnapList()
     	  		  self.AWREndTimeStr["values"]=self.GetAWRSnapList()
     	  		  tkinter.messagebox.showinfo("Message:", "Created snap successfully")
-    	  self.CreateSnap = tkinter.Button(self.Content, text = 'Create Snap', width = 10, command = CreateSnap)
+    	  self.CreateSnap = tkinter.ttk.Button(self.Content, text = 'Create Snap', width = 12, command = CreateSnap)
     	  self.CreateSnap.place(x = xrevise, y = yrevise+115)
-    	  self.GetAWR = tkinter.Button(self.Content, text = 'View Report', width = 10, command = self.GetAWRHtml)
-    	  self.GetAWR.place(x = xrevise+100, y = yrevise+115)  	  		
+    	  self.GetAWR = tkinter.ttk.Button(self.Content, text = 'export Report', width = 12, command = self.GetAWRHtml)
+    	  self.GetAWR.place(x = xrevise+110, y = yrevise+115)  	  		
     def GetAWRSnapList(self):
     	  date=[]
     	  if self.LoginStatus:
